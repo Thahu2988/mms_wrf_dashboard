@@ -4,7 +4,7 @@ import os
 # 1. Page Configuration
 st.set_page_config(page_title="Daily WRF Forecast", layout="wide")
 
-st.title("🌧️ WRF Precipitation Forecast Dashboard")
+st.title("MMS:WRF Model Dashboard")
 st.write("Automatically updated every night at 23:00 hrs.")
 
 # 2. Define the folder where GitHub stores your images
@@ -37,4 +37,5 @@ if os.path.exists(os.path.join(IMAGE_FOLDER, selected_file)):
 else:
     # If the file hasn't uploaded yet, show a friendly message
     st.warning(f"Searching for {selected_file}... If the model is still running, please check back in a few minutes.")
+
     st.info("Note: The server syncs new data daily at 23:00.")
