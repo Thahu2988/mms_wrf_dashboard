@@ -6,7 +6,7 @@ from PIL import Image
 # Page config
 st.set_page_config(page_title="WRF Plot Viewer", layout="wide")
 
-st.title("📊 MMS WRF Dashboard")
+st.title("MMS WRF Dashboard")
 
 # Define the directory
 PLOT_DIR = "plot"
@@ -50,3 +50,4 @@ else:
 # --- Troubleshooting Helper ---
 with st.expander("Debug: See all files in folder"):
     st.write(os.listdir(PLOT_DIR) if os.path.exists(PLOT_DIR) else "Folder not found")
+
