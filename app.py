@@ -3,55 +3,49 @@ import os
 import re
 from PIL import Image
 
-st.set_page_config(page_title="WRF Forecast Viewer", layout="wide")
+st.set_page_config(page_title="WRF Dashboard", layout="wide")
 
-# Custom CSS to make the UI cleaner
-st.markdown("""
-    <style>
-    .main { background-color: #f5f5f5; }
-    </style>
-    """, unsafe_allow_html=True)
+# 1. FIX: Force Streamlit to re-scan the folder by clearing cache
+if st.sidebar.button("🔄 Refresh Plots"):
+    st.cache_data.clear()
 
 st.title("🌪️ MMS WRF Dashboard")
 
-PLOT_DIR = "plot"
+# 2. Path Setup
+# Using os.getcwd() ensures we are looking in the root of the deployed app
+PLOT_DIR = os.path.join(os.getcwd(), "plot")
 
 def natural_sort_key(s):
-    """Sorts strings containing numbers in human order (e.g., 2 before 10)"""
     return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
 
+# 3. Enhanced File Search
 if os.path.exists(PLOT_DIR):
-    # Filter for images and sort them numerically
-    plot_files = [f for f in os.listdir(PLOT_DIR) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+    # This grabs ALL images, even if they have different extensions
+    plot_files = [
+        f for f in os.listdir(PLOT_DIR) 
+        if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))
+    ]
     plot_files.sort(key=natural_sort_key)
 
     if plot_files:
-        # Sidebar Navigation
-        st.sidebar.header("Navigation Control")
+        st.sidebar.success(f"✅ Found {len(plot_files)} plots")
         
-        # Method 1: Slider for quick scrubbing through time/frames
-        idx = st.sidebar.slider("Timeline Step", 0, len(plot_files) - 1, 0)
+        # Selection UI
+        selected_plot = st.sidebar.select_slider(
+            "Move through timeline", 
+            options=plot_files
+        )
         
-        # Method 2: Manual Dropdown
-        selected_plot = st.sidebar.selectbox("Select Specific Plot", plot_files, index=idx)
-        
-        # Display the selected image
+        # Display
         image_path = os.path.join(PLOT_DIR, selected_plot)
+        img = Image.open(image_path)
         
         st.subheader(f"Current Plot: `{selected_plot}`")
+        st.image(img, use_container_width=True)
         
-        # Load and display
-        img = Image.open(image_path)
-        st.image(img, use_container_width=True, caption=f"WRF Output: {selected_plot}")
-
-        # Metrics/Details (Optional)
-        col1, col2 = st.columns(2)
-        with col1:
-            st.info(f"Total Plots available: {len(plot_files)}")
-        with col2:
-            st.success(f"File Path: {image_path}")
-            
     else:
-        st.error("The 'plot' folder is empty.")
+        st.error("The folder was found, but it appears empty. Check your file extensions.")
 else:
-    st.error(f"Folder '{PLOT_DIR}' not found. Please check your GitHub repo structure.")
+    st.error(f"Cannot find folder: {PLOT_DIR}")
+    # Show what folders DO exist to help debug
+    st.write("Available folders:", os.listdir("."))
