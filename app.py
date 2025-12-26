@@ -3,49 +3,51 @@ import os
 import re
 from PIL import Image
 
-st.set_page_config(page_title="WRF Dashboard", layout="wide")
-
-# 1. FIX: Force Streamlit to re-scan the folder by clearing cache
-if st.sidebar.button("🔄 Refresh Plots"):
-    st.cache_data.clear()
+st.set_page_config(page_title="WRF Plot Viewer", layout="wide")
 
 st.title("🌪️ MMS WRF Dashboard")
 
-# 2. Path Setup
-# Using os.getcwd() ensures we are looking in the root of the deployed app
-PLOT_DIR = os.path.join(os.getcwd(), "plot")
+# 1. Folder Path
+PLOT_DIR = "plot"
 
 def natural_sort_key(s):
+    """Ensures 03.png comes before 10_wind.png"""
     return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
 
-# 3. Enhanced File Search
 if os.path.exists(PLOT_DIR):
-    # This grabs ALL images, even if they have different extensions
-    plot_files = [
-        f for f in os.listdir(PLOT_DIR) 
-        if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))
-    ]
+    # 2. Get all images and sort them
+    all_files = os.listdir(PLOT_DIR)
+    plot_files = [f for f in all_files if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
     plot_files.sort(key=natural_sort_key)
 
     if plot_files:
-        st.sidebar.success(f"✅ Found {len(plot_files)} plots")
-        
-        # Selection UI
-        selected_plot = st.sidebar.select_slider(
-            "Move through timeline", 
-            options=plot_files
+        # 3. Sidebar Dropdown Menu
+        st.sidebar.header("Controls")
+        selected_plot = st.sidebar.selectbox(
+            "Choose a Plot:", 
+            options=plot_files,
+            index=0  # Defaults to the first plot
         )
-        
-        # Display
+
+        # 4. Display Logic
+        st.subheader(f"Showing: {selected_plot}")
         image_path = os.path.join(PLOT_DIR, selected_plot)
-        img = Image.open(image_path)
         
-        st.subheader(f"Current Plot: `{selected_plot}`")
-        st.image(img, use_container_width=True)
-        
+        try:
+            img = Image.open(image_path)
+            st.image(img, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error loading image: {e}")
+
+        # --- DEBUG SECTION ---
+        # This helps us find why only 4 are visible
+        with st.expander("🛠️ Debug: See all files found"):
+            st.write(f"Total files in folder: {len(all_files)}")
+            st.write(f"Valid images found: {len(plot_files)}")
+            st.write("List of all files discovered:", all_files)
+            
     else:
-        st.error("The folder was found, but it appears empty. Check your file extensions.")
+        st.error(f"No .png or .jpg files found in /{PLOT_DIR}")
+        st.write("Files actually present:", all_files)
 else:
-    st.error(f"Cannot find folder: {PLOT_DIR}")
-    # Show what folders DO exist to help debug
-    st.write("Available folders:", os.listdir("."))
+    st.error(f"Folder '{PLOT_DIR}' not found. Please check your GitHub structure.")
