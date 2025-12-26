@@ -3,51 +3,50 @@ import os
 import re
 from PIL import Image
 
+# Page config
 st.set_page_config(page_title="WRF Plot Viewer", layout="wide")
 
-st.title("🌪️ MMS WRF Dashboard")
+st.title("📊 MMS WRF Dashboard")
 
-# 1. Folder Path
+# Define the directory
 PLOT_DIR = "plot"
 
 def natural_sort_key(s):
-    """Ensures 03.png comes before 10_wind.png"""
+    """Sorts strings containing numbers in human order (1, 2, 10 instead of 1, 10, 2)"""
     return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
 
+# 1. Check if folder exists
 if os.path.exists(PLOT_DIR):
-    # 2. Get all images and sort them
+    # 2. Get all images and sort them correctly
     all_files = os.listdir(PLOT_DIR)
     plot_files = [f for f in all_files if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
     plot_files.sort(key=natural_sort_key)
 
     if plot_files:
         # 3. Sidebar Dropdown Menu
-        st.sidebar.header("Controls")
+        st.sidebar.header("Navigation")
         selected_plot = st.sidebar.selectbox(
-            "Choose a Plot:", 
-            options=plot_files,
-            index=0  # Defaults to the first plot
+            "Select Plot File:", 
+            options=plot_files
         )
 
-        # 4. Display Logic
-        st.subheader(f"Showing: {selected_plot}")
-        image_path = os.path.join(PLOT_DIR, selected_plot)
+        # 4. Main Display Area
+        st.subheader(f"Current View: {selected_plot}")
         
-        try:
-            img = Image.open(image_path)
-            st.image(img, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error loading image: {e}")
+        image_path = os.path.join(PLOT_DIR, selected_plot)
+        img = Image.open(image_path)
+        
+        # Display the image
+        st.image(img, use_container_width=True)
+        
+        # Optional: File info
+        st.caption(f"File location: {image_path} | Total plots: {len(plot_files)}")
 
-        # --- DEBUG SECTION ---
-        # This helps us find why only 4 are visible
-        with st.expander("🛠️ Debug: See all files found"):
-            st.write(f"Total files in folder: {len(all_files)}")
-            st.write(f"Valid images found: {len(plot_files)}")
-            st.write("List of all files discovered:", all_files)
-            
     else:
-        st.error(f"No .png or .jpg files found in /{PLOT_DIR}")
-        st.write("Files actually present:", all_files)
+        st.error("No images found in the 'plot' folder. Please check your file extensions (.png, .jpg).")
 else:
-    st.error(f"Folder '{PLOT_DIR}' not found. Please check your GitHub structure.")
+    st.error(f"Directory '{PLOT_DIR}' not found. Ensure the folder is in your GitHub repo.")
+
+# --- Troubleshooting Helper ---
+with st.expander("Debug: See all files in folder"):
+    st.write(os.listdir(PLOT_DIR) if os.path.exists(PLOT_DIR) else "Folder not found")
